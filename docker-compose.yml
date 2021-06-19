@@ -1,0 +1,43 @@
+version: '3.8'
+
+services: 
+    zookeeper:
+        image: debezium/zookeeper:1.5
+        hostname: zookeeper
+        container_name: zookeeper
+        ports: 
+            - "2181:2181"
+            - "2888:2888"
+            - "3888:3888"
+        volumes:
+            - $PWD/zookeeper/data:/data
+            - $PWD/zookeeper/log:/log
+    
+    kafka:
+        image: debezium/kafka:1.5
+        hostname: kafka
+        container_name: kafka
+        depends_on: 
+            - zookeeper
+        ports: 
+            - "9092:9092"
+        environment: 
+            - ZOOKEEPER_CONNECT=zookeeper:2181
+        volumes:
+            - $PWD/broker/data:/data
+            - $PWD/broker/logs:/logs
+    
+    connect:
+        image: debezium/connect:1.5
+        hostname: connect
+        container_name: connect
+        ports: 
+            - "8083:8083"
+        environment: 
+            - GROUP_ID=1
+            - CONFIG_STORAGE_TOPIC=my_current_configs
+            - OFFSET_STORAGE_TOPIC=my_connect_offsets
+            - STATUS_STORAGE_TOPIC=my_connect_statuses
+            - BOOTSTRAP_SERVERS=kafka:9092
+        depends_on: 
+            - kafka
